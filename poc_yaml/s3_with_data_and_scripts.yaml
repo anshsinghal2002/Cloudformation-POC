@@ -11,9 +11,9 @@ Resources:
       BucketName: !Ref S3Bucket
       Files:
         - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/python_scripts/lambda_function.py
-          Destination: lambda_start.py
+          Destination: scripts/lambda_start.py
         - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/python_scripts/lambda_handler.py
-          Destination: folder/lambda_status.py
+          Destination: scripts/lambda_status.py
 
   LambdaExecutionRole:
     Type: AWS::IAM::Role
