@@ -2,7 +2,7 @@ Resources:
   S3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: demo-bucket
+      BucketName: demo-bucket-123411
 
   UploadFiles:
     Type: Custom::S3Upload
@@ -35,6 +35,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - s3:PutObject
+                  - s3:GetObject
                 Resource: !Sub '${S3Bucket.Arn}/*'
 
   UploadLambda:
@@ -64,4 +65,28 @@ Resources:
               print(e)
               cfnresponse.send(event, context, cfnresponse.FAILED, {})
 
+      Runtime: python3.8
+
+  StartCrawlerFunction:
+    Type: AWS::Lambda::Function
+    DependsOn: UploadFiles
+    Properties:
+      FunctionName: start-crawler-function
+      Handler: lambda_start.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        S3Bucket: !Ref S3Bucket
+        S3Key: scripts/lambda_start.py
+      Runtime: python3.8
+
+  GetCrawlerStatusFunction:
+    Type: AWS::Lambda::Function
+    DependsOn: StartCrawlerFunction
+    Properties:
+      FunctionName: get-crawler-status
+      Handler: lambda_status.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        S3Bucket: !Ref S3Bucket
+        S3Key: scripts/lambda_status.py
       Runtime: python3.8
