@@ -1,0 +1,45 @@
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: bucket-with-files
+
+  UploadFiles:
+    Type: Custom::S3Upload
+    Properties:
+      ServiceToken: !GetAtt UploadLambda.Arn
+      BucketName: !Ref S3Bucket
+      Files:
+        - Source: https://example.com/file1.txt
+          Destination: file1.txt
+        - Source: https://example.com/file2.txt
+          Destination: folder/file2.txt
+
+  UploadLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          import boto3
+          import cfnresponse
+          import urllib.request
+
+          s3 = boto3.client('s3')
+
+          def handler(event, context):
+            try:
+              bucket = event['ResourceProperties']['BucketName']
+              files = event['ResourceProperties']['Files']
+              
+              for file in files:
+                urllib.request.urlretrieve(file['Source'], '/tmp/tempfile')
+                s3.upload_file('/tmp/tempfile', bucket, file['Destination'])
+              
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+            except Exception as e:
+              print(e)
+              cfnresponse.send(event, context, cfnresponse.FAILED, {})
+
+      Runtime: python3.8

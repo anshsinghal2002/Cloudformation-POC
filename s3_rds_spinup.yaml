@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template to create an S3 bucket and an RDS instance'
+
+Parameters:
+  DBName:
+    Type: String
+    Default: 'mydb'
+    Description: 'The name of the database'
+  DBUsername:
+    Type: String
+    Description: 'The database admin account username'
+  DBPassword:
+    Type: String
+    NoEcho: true
+    Description: 'The database admin account password'
+
+Resources:
+  MyS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-bucket'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  MyDBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBName: !Ref DBName
+      Engine: MySQL
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+      PubliclyAccessible: false
+      DeletionProtection: false
+
+Outputs:
+  S3BucketName:
+    Description: 'Name of the created S3 bucket'
+    Value: !Ref MyS3Bucket
+  RDSEndpoint:
+    Description: 'Endpoint of the RDS instance'
+    Value: !GetAtt MyDBInstance.Endpoint.Address
+  RDSPort:
+    Description: 'Port of the RDS instance'
+    Value: !GetAtt MyDBInstance.Endpoint.Port

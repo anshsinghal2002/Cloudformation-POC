@@ -1,0 +1,24 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Simple CloudFormation template to create an S3 bucket
+
+Resources:
+  MyS3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      AccessControl: Private
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+Outputs:
+  BucketName:
+    Description: The name of the S3 bucket
+    Value: !Ref MyS3Bucket
