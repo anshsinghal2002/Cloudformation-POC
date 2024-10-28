@@ -10,10 +10,10 @@ Resources:
       ServiceToken: !GetAtt UploadLambda.Arn
       BucketName: !Ref S3Bucket
       Files:
-        - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/python_scripts/lambda_function.py
-          Destination: scripts/lambda_start.py
-        - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/python_scripts/lambda_handler.py
-          Destination: scripts/lambda_status.py
+        - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/python_scripts/lambda_function.zip
+          Destination: scripts/lambda_start.zip
+        - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/python_scripts/lambda_handler.zip
+          Destination: scripts/lambda_status.zip
 
   LambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -76,7 +76,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
         S3Bucket: !Ref S3Bucket
-        S3Key: scripts/lambda_start.py
+        S3Key: scripts/lambda_start.zip
       Runtime: python3.8
 
   GetCrawlerStatusFunction:
@@ -88,5 +88,5 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
         S3Bucket: !Ref S3Bucket
-        S3Key: scripts/lambda_status.py
+        S3Key: scripts/lambda_status.zip
       Runtime: python3.8

@@ -1,0 +1,47 @@
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource: 
+                  - arn:aws:s3:::demo-bucket3986y
+                  - arn:aws:s3:::demo-bucket3986y/*
+
+  StartCrawlerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: start-crawler-function
+      Handler: lambda_start.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        S3Bucket: 'demo-bucket3986y'
+        S3Key: scripts/lambda_start.zip
+      Runtime: python3.8
+
+  GetCrawlerStatusFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: get-crawler-status
+      Handler: lambda_status.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        S3Bucket: 'demo-bucket3986y'
+        S3Key: scripts/lambda_status.zip
+      Runtime: python3.8
