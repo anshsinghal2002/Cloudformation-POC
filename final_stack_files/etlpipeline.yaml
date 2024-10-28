@@ -16,6 +16,10 @@ Resources:
           Destination: scripts/lambda_status.zip
         - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/gluejob_scripts/job1.py
           Destination: scripts/job1.py
+        - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/example_data/games.csv
+          Destination: raw/games.csv
+        - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/notes.md
+          Destination: cleaned/notes.md
 
   LambdaExecutionRole:
     Type: AWS::IAM::Role
