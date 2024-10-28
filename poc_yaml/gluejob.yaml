@@ -1,0 +1,44 @@
+Resources:  
+  GlueJobRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: glue.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
+      Policies:
+        - PolicyName: S3AccessForGlue
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource: 
+                  - arn:aws:s3:::demo-bucket3986y
+                  - arn:aws:s3:::demo-bucket3986y/*
+
+  GlueJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Name: my-glue-job
+      Role: !GetAtt GlueJobRole.Arn
+      Command: 
+        Name: glueetl
+        ScriptLocation: 's3://demo-bucket3986y/scripts/job1.py'
+      DefaultArguments:
+        '--job-language': 'python'
+        '--job-bookmark-option': 'job-bookmark-enable'
+      GlueVersion: '3.0'
+      MaxRetries: 0
+      Timeout: 2880
+      NumberOfWorkers: 2
+      WorkerType: 'G.1X'
