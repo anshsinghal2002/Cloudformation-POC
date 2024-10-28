@@ -10,9 +10,9 @@ Resources:
       ServiceToken: !GetAtt UploadLambda.Arn
       BucketName: !Ref S3Bucket
       Files:
-        - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/python_scripts/lambda_function.zip
+        - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/python_scripts/lambda_start.zip
           Destination: scripts/lambda_start.zip
-        - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/python_scripts/lambda_handler.zip
+        - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/python_scripts/lambda_status.zip
           Destination: scripts/lambda_status.zip
 
   LambdaExecutionRole:
