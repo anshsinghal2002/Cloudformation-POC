@@ -43,7 +43,16 @@ Resources:
                   - s3:PutObject
                   - s3:GetObject
                 Resource: !Sub '${S3Bucket.Arn}/*'
-
+        - PolicyName: GlueAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - glue:StartCrawler
+                  - glue:GetCrawler
+                Resource: !Sub 'arn:aws:glue:${AWS::Region}:${AWS::AccountId}:crawler/*'
+  
   UploadLambda:
     Type: AWS::Lambda::Function
     Properties:
