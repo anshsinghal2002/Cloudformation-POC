@@ -14,6 +14,8 @@ Resources:
           Destination: scripts/lambda_start.zip
         - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/python_scripts/lambda_status.zip
           Destination: scripts/lambda_status.zip
+        - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/gluejob_scripts/job1.py
+          Destination: scripts/job1.py
 
   LambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -125,7 +127,7 @@ Resources:
       BucketName: !Ref S3Bucket
       Files:
         - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/python_scripts/glue_job_script.py
-          Destination: scripts/glue_job_script.py
+          Destination: scripts/job1.py
 
   GlueJob:
     Type: AWS::Glue::Job
@@ -135,7 +137,7 @@ Resources:
       Role: !GetAtt GlueJobRole.Arn
       Command: 
         Name: glueetl
-        ScriptLocation: !Sub 's3://${S3Bucket}/scripts/glue_job_script.py'
+        ScriptLocation: !Sub 's3://${S3Bucket}/scripts/job1.py'
       DefaultArguments:
         '--job-language': 'python'
         '--job-bookmark-option': 'job-bookmark-enable'

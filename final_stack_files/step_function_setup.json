@@ -6,7 +6,7 @@
         "Type": "Task",
         "Resource": "arn:aws:states:::glue:startJobRun.sync",
         "Parameters": {
-          "JobName": "my-glue-job"
+          "JobName": "job1"
         },
         "Next": "crawler1start"
       },
