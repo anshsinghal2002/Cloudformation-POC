@@ -22,6 +22,11 @@ done
 ```
 
 or using python script executed by a lambda function
+### Rolling back cfn template
+
+```bash
+aws cloudformation rollback-stack --stack-name <your-stack-name>
+```
 
 ### Executing cfn yaml
 
