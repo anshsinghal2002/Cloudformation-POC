@@ -159,27 +159,40 @@ Resources:
       WorkerType: 'G.1X'
 
   StepFunctionExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: states.amazonaws.com
-            Action: sts:AssumeRole
-      Policies:
-        - PolicyName: StepFunctionExecutionPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - glue:StartJobRun
-                  - lambda:InvokeFunction
-                Resource: 
-                  - !GetAtt GlueJobRole.Arn
-                  - !GetAtt LambdaExecutionRole.Arn
+  Type: AWS::IAM::Role
+  Properties:
+    AssumeRolePolicyDocument:
+      Version: '2012-10-17'
+      Statement:
+        - Effect: Allow
+          Principal:
+            Service: states.amazonaws.com
+          Action: sts:AssumeRole
+    Policies:
+      - PolicyName: StepFunctionExecutionPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - glue:StartJobRun
+                - glue:GetJobRun
+                - glue:GetJobRuns
+                - glue:BatchStopJobRun
+              Resource: !GetAtt GlueJob.Arn
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource:
+                - !GetAtt StartCrawlerFunction.Arn
+                - !GetAtt GetCrawlerStatusFunction.Arn
+            - Effect: Allow
+              Action:
+                - events:PutTargets
+                - events:PutRule
+                - events:DescribeRule
+              Resource:
+                - !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctionsGetEventsForGlueJobsRule
 
   MyStateMachine:
     Type: AWS::StepFunctions::StateMachine
