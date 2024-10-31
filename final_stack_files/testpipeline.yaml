@@ -178,9 +178,8 @@ Resources:
                   - glue:StartJobRun
                   - lambda:InvokeFunction
                 Resource: 
-                  - !GetAtt GlueJob.Arn
-                  - !GetAtt StartCrawlerFunction.Arn
-                  - !GetAtt GetCrawlerStatusFunction.Arn
+                  - !GetAtt GlueJobRole.Arn
+                  - !GetAtt LambdaExecutionRole.Arn
 
   MyStateMachine:
     Type: AWS::StepFunctions::StateMachine
