@@ -23,6 +23,15 @@ Resources:
                 Resource: 
                   - arn:aws:s3:::demo-bucket3986y
                   - arn:aws:s3:::demo-bucket3986y/*
+        - PolicyName: GlueAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - glue:StartCrawler
+                  - glue:GetCrawler
+                Resource: !Sub 'arn:aws:glue:${AWS::Region}:${AWS::AccountId}:crawler/*'
 
   StartCrawlerFunction:
     Type: AWS::Lambda::Function

@@ -4,7 +4,7 @@ Resources:
     Properties:
       BucketName: demo-bucket-123411
 
-  UploadFiles:
+  UploadLambdaScripts:
     Type: Custom::S3Upload
     Properties:
       ServiceToken: !GetAtt UploadLambda.Arn
@@ -14,6 +14,13 @@ Resources:
           Destination: scripts/lambda_start.zip
         - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/python_scripts/lambda_status.zip
           Destination: scripts/lambda_status.zip
+
+  UploadData:
+    Type: Custom::S3Upload
+    Properties:
+      ServiceToken: !GetAtt UploadLambda.Arn
+      BucketName: !Ref S3Bucket
+      Files:
         - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/gluejob_scripts/job1.py
           Destination: scripts/job1.py
         - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/example_data/games.csv
@@ -84,7 +91,7 @@ Resources:
 
   StartCrawlerFunction:
     Type: AWS::Lambda::Function
-    DependsOn: UploadFiles
+    DependsOn: UploadLambdaScripts
     Properties:
       FunctionName: start-crawler-function
       Handler: lambda_start.lambda_handler
@@ -96,7 +103,7 @@ Resources:
 
   GetCrawlerStatusFunction:
     Type: AWS::Lambda::Function
-    DependsOn: UploadFiles
+    DependsOn: UploadLambdaScripts
     Properties:
       FunctionName: get-crawler-status
       Handler: lambda_status.lambda_handler
@@ -135,7 +142,7 @@ Resources:
 
   GlueJob:
     Type: AWS::Glue::Job
-    DependsOn: UploadFiles
+    DependsOn: UploadData
     Properties:
       Name: my-glue-job
       Role: !GetAtt GlueJobRole.Arn
@@ -177,6 +184,10 @@ Resources:
 
   MyStateMachine:
     Type: AWS::StepFunctions::StateMachine
+    DependsOn:
+      - GlueJob
+      - StartCrawlerFunction
+      - GetCrawlerStatusFunction
     Properties:
       RoleArn: !GetAtt StepFunctionExecutionRole.Arn
       DefinitionString: !Sub
