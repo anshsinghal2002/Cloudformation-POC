@@ -179,7 +179,13 @@ Resources:
                 - glue:GetJobRun
                 - glue:GetJobRuns
                 - glue:BatchStopJobRun
-              Resource: !GetAtt GlueJob.Arn
+                - glue:GetTable
+                - glue:GetDatabase
+              Resource: 
+                - !GetAtt GlueJob.Arn
+                - !Sub arn:aws:glue:${AWS::Region}:${AWS::AccountId}:catalog
+                - !Sub arn:aws:glue:${AWS::Region}:${AWS::AccountId}:database/*
+                - !Sub arn:aws:glue:${AWS::Region}:${AWS::AccountId}:table/*
             - Effect: Allow
               Action:
                 - lambda:InvokeFunction
@@ -192,8 +198,7 @@ Resources:
                 - events:PutRule
                 - events:DescribeRule
               Resource:
-                - !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctionsGetEventsForGlueJobsRule
-
+                - !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctions*
   MyStateMachine:
     Type: AWS::StepFunctions::StateMachine
     DependsOn:
