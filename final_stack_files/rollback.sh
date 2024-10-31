@@ -18,6 +18,6 @@ done
 
 # Rollback the CloudFormation stack
 echo "Rolling back CloudFormation stack: $STACK_NAME"
-aws cloudformation rollback-stack --stack-name $STACK_NAME
+aws cloudformation delete-stack --stack-name $STACK_NAME
 
 echo "Operations completed."
