@@ -18,8 +18,4 @@ done
 
 # Attempt to delete the CloudFormation stack
 echo "Deleting CloudFormation stack: $STACK_NAME"
-aws cloudformation delete-stack --stack-name $STACK_NAME
-
-# Wait for the stack deletion to complete
-echo "Waiting for stack deletion to complete..."
-aws cloudformation wait stack-delete-complete --stack-name $STACK_NAME --retain-resources "UploadLambdaScripts" "UploadData"
+aws cloudformation delete-stack --stack-name $STACK_NAME --retain-resources "UploadData" "UploadLambdaScripts"
