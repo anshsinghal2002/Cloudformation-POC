@@ -89,7 +89,7 @@ Resources:
 
   StartCrawlerFunction:
     Type: AWS::Lambda::Function
-    DependsOn: UploadLambda
+    DependsOn: UploadLambdaScripts
     Properties:
       FunctionName: start-crawler-function
       Handler: lambda_start.lambda_handler
@@ -101,7 +101,7 @@ Resources:
 
   GetCrawlerStatusFunction:
     Type: AWS::Lambda::Function
-    DependsOn: UploadLambda
+    DependsOn: UploadLambdaScripts
     Properties:
       FunctionName: get-crawler-status
       Handler: lambda_status.lambda_handler
@@ -140,6 +140,7 @@ Resources:
 
   GlueJob:
     Type: AWS::Glue::Job
+    DependsOn: UploadData
     Properties:
       Name: my-glue-job
       Role: !GetAtt GlueJobRole.Arn
@@ -193,6 +194,10 @@ Resources:
 
   MyStateMachine:
     Type: AWS::StepFunctions::StateMachine
+    DependsOn:
+      - GlueJob
+      - GetCrawlerStatusFunction
+      - StartCrawlerFunction
     Properties:
       RoleArn: !GetAtt StepFunctionExecutionRole.Arn
       DefinitionString: !Sub
