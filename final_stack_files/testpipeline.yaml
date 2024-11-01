@@ -150,6 +150,7 @@ Resources:
       DefaultArguments:
         '--job-language': python
         '--job-bookmark-option': job-bookmark-enable
+        '--S3_BUCKET': !Ref S3Bucket
       GlueVersion: '3.0'
       MaxRetries: 0
       Timeout: 2880
