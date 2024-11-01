@@ -6,6 +6,7 @@ Resources:
 
   UploadLambdaScripts:
     Type: Custom::S3Upload
+    DependsOn: UploadLambda
     Properties:
       ServiceToken: !GetAtt UploadLambda.Arn
       BucketName: !Ref S3Bucket
@@ -17,6 +18,7 @@ Resources:
 
   UploadData:
     Type: Custom::S3Upload
+    DependsOn: UploadLambda
     Properties:
       ServiceToken: !GetAtt UploadLambda.Arn
       BucketName: !Ref S3Bucket
@@ -62,9 +64,7 @@ Resources:
 
   UploadLambda:
     Type: AWS::Lambda::Function
-    DependsOn:
-      - UploadData
-      - UploadLambdaScripts
+
     Properties:
       Handler: index.handler
       Role: !GetAtt LambdaExecutionRole.Arn
