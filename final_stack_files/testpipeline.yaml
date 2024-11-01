@@ -177,7 +177,7 @@ Resources:
                   - glue:GetJobRun
                   - glue:GetJobRuns
                   - glue:BatchStopJobRun
-                Resource: !GetAtt GlueJob.Arn
+                Resource: !Sub 'arn:aws:glue:${AWS::Region}:${AWS::AccountId}:job/${GlueJob}'
               - Effect: Allow
                 Action:
                   - lambda:InvokeFunction
