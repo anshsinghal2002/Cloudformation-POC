@@ -49,7 +49,7 @@ Resources:
                 Action:
                   - s3:PutObject
                   - s3:GetObject
-                Resource: !Sub '${S3Bucket.Arn}/*'
+                Resource: !Sub ${S3Bucket.Arn}/*
         - PolicyName: GlueAccess
           PolicyDocument:
             Version: '2012-10-17'
@@ -58,10 +58,13 @@ Resources:
                 Action:
                   - glue:StartCrawler
                   - glue:GetCrawler
-                Resource: !Sub 'arn:aws:glue:${AWS::Region}:${AWS::AccountId}:crawler/*'
+                Resource: !Sub arn:aws:glue:${AWS::Region}:${AWS::AccountId}:crawler/*
 
   UploadLambda:
     Type: AWS::Lambda::Function
+    DependsOn:
+      - UploadData
+      - UploadLambdaScripts
     Properties:
       Handler: index.handler
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -70,28 +73,23 @@ Resources:
           import boto3
           import cfnresponse
           import urllib.request
-
           s3 = boto3.client('s3')
-
           def handler(event, context):
             try:
               bucket = event['ResourceProperties']['BucketName']
               files = event['ResourceProperties']['Files']
-              
               for file in files:
                 urllib.request.urlretrieve(file['Source'], '/tmp/tempfile')
                 s3.upload_file('/tmp/tempfile', bucket, file['Destination'])
-              
               cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
             except Exception as e:
               print(e)
               cfnresponse.send(event, context, cfnresponse.FAILED, {})
-
       Runtime: python3.8
 
   StartCrawlerFunction:
     Type: AWS::Lambda::Function
-    DependsOn: UploadLambdaScripts
+    DependsOn: UploadLambda
     Properties:
       FunctionName: start-crawler-function
       Handler: lambda_start.lambda_handler
@@ -103,7 +101,7 @@ Resources:
 
   GetCrawlerStatusFunction:
     Type: AWS::Lambda::Function
-    DependsOn: UploadLambdaScripts
+    DependsOn: UploadLambda
     Properties:
       FunctionName: get-crawler-status
       Handler: lambda_status.lambda_handler
@@ -136,75 +134,65 @@ Resources:
                   - s3:PutObject
                   - s3:DeleteObject
                   - s3:ListBucket
-                Resource: 
-                  - !Sub '${S3Bucket.Arn}'
-                  - !Sub '${S3Bucket.Arn}/*'
+                Resource:
+                  - !Sub ${S3Bucket.Arn}
+                  - !Sub ${S3Bucket.Arn}/*
 
   GlueJob:
     Type: AWS::Glue::Job
-    DependsOn: UploadData
     Properties:
       Name: my-glue-job
       Role: !GetAtt GlueJobRole.Arn
-      Command: 
+      Command:
         Name: glueetl
-        ScriptLocation: !Sub 's3://${S3Bucket}/scripts/job1.py'
+        ScriptLocation: !Sub s3://${S3Bucket}/scripts/job1.py
       DefaultArguments:
-        '--job-language': 'python'
-        '--job-bookmark-option': 'job-bookmark-enable'
+        '--job-language': python
+        '--job-bookmark-option': job-bookmark-enable
       GlueVersion: '3.0'
       MaxRetries: 0
       Timeout: 2880
       NumberOfWorkers: 2
-      WorkerType: 'G.1X'
+      WorkerType: G.1X
 
   StepFunctionExecutionRole:
-  Type: AWS::IAM::Role
-  Properties:
-    AssumeRolePolicyDocument:
-      Version: '2012-10-17'
-      Statement:
-        - Effect: Allow
-          Principal:
-            Service: states.amazonaws.com
-          Action: sts:AssumeRole
-    Policies:
-      - PolicyName: StepFunctionExecutionPolicy
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action:
-                - glue:StartJobRun
-                - glue:GetJobRun
-                - glue:GetJobRuns
-                - glue:BatchStopJobRun
-                - glue:GetTable
-                - glue:GetDatabase
-              Resource: 
-                - !GetAtt GlueJob.Arn
-                - !Sub arn:aws:glue:${AWS::Region}:${AWS::AccountId}:catalog
-                - !Sub arn:aws:glue:${AWS::Region}:${AWS::AccountId}:database/*
-                - !Sub arn:aws:glue:${AWS::Region}:${AWS::AccountId}:table/*
-            - Effect: Allow
-              Action:
-                - lambda:InvokeFunction
-              Resource:
-                - !GetAtt StartCrawlerFunction.Arn
-                - !GetAtt GetCrawlerStatusFunction.Arn
-            - Effect: Allow
-              Action:
-                - events:PutTargets
-                - events:PutRule
-                - events:DescribeRule
-              Resource:
-                - !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctions*
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: states.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: StepFunctionExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - glue:StartJobRun
+                  - glue:GetJobRun
+                  - glue:GetJobRuns
+                  - glue:BatchStopJobRun
+                Resource: !GetAtt GlueJob.Arn
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - !GetAtt StartCrawlerFunction.Arn
+                  - !GetAtt GetCrawlerStatusFunction.Arn
+              - Effect: Allow
+                Action:
+                  - events:PutTargets
+                  - events:PutRule
+                  - events:DescribeRule
+                Resource:
+                  - !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctions*
+
   MyStateMachine:
     Type: AWS::StepFunctions::StateMachine
-    DependsOn:
-      - GlueJob
-      - StartCrawlerFunction
-      - GetCrawlerStatusFunction
     Properties:
       RoleArn: !GetAtt StepFunctionExecutionRole.Arn
       DefinitionString: !Sub
