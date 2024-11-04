@@ -3,6 +3,7 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: demo-bucket-input
+      
   S3Bucket2:
     Type: AWS::S3::Bucket
     Properties:
