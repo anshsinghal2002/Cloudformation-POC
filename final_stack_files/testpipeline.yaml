@@ -177,6 +177,32 @@ Resources:
       NumberOfWorkers: 2
       WorkerType: G.1X
 
+  GlueDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Name: my-glue-database
+        Description: Database for Glue crawler results
+
+  GlueCrawler:
+    Type: AWS::Glue::Crawler
+    DependsOn:
+      - GlueDatabase
+      - UploadData
+    Properties:
+      Name: crawler1
+      Role: !GetAtt GlueJobRole.Arn
+      DatabaseName: !Ref GlueDatabase
+      Targets:
+        S3Targets:
+          - Path: !Sub 's3://${S3Bucket}/cleaned/'
+      Schedule:
+        ScheduleExpression: cron(0 1 * * ? *)
+      SchemaChangePolicy:
+        UpdateBehavior: UPDATE_IN_DATABASE
+        DeleteBehavior: LOG
+
   StepFunctionExecutionRole:
     Type: AWS::IAM::Role
     Properties:
