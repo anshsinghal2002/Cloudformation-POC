@@ -294,7 +294,7 @@ Resources:
                 "Parameters": {
                   "Payload": {
                     "crawlername": "crawler1"
-                  }
+                  },
                   "FunctionName": "${GetCrawlerStatusFunctionArn}"
                 },
                 "Retry": [
