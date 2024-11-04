@@ -101,17 +101,16 @@ Resources:
       Timeout: 30
 
   GetCrawlerStatusFunction:
-  Type: AWS::Lambda::Function
-  DependsOn: UploadLambdaScripts
-  Properties:
-    FunctionName: get-crawler-status
-    Handler: lambda_status.lambda_handler
-    Role: !GetAtt LambdaExecutionRole.Arn
-    Code:
-      S3Bucket: !Ref S3Bucket
-      S3Key: scripts/lambda_status.zip
-    Runtime: python3.8
-    Timeout: 30
+    Type: AWS::Lambda::Function
+    DependsOn: UploadLambdaScripts
+    Properties:
+      FunctionName: get-crawler-status
+      Handler: lambda_status.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        S3Bucket: !Ref S3Bucket
+        S3Key: scripts/lambda_status.zip
+      Runtime: python3.8
 
   GlueJobRole:
     Type: AWS::IAM::Role
@@ -242,98 +241,79 @@ Resources:
                   - !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctions*
 
   MyStateMachine:
-  Type: AWS::StepFunctions::StateMachine
-  DependsOn:
-    - GlueJob
-    - StartCrawlerFunction
-    - GetCrawlerStatusFunction
-  Properties:
-    RoleArn: !GetAtt StepFunctionExecutionRole.Arn
-    DefinitionString: !Sub
-      - |
-        {
-          "Comment": "A description of my state machine",
-          "StartAt": "Glue StartJobRun",
-          "States": {
-            "Glue StartJobRun": {
-              "Type": "Task",
-              "Resource": "arn:aws:states:::glue:startJobRun.sync",
-              "Parameters": {
-                "JobName": "${GlueJobName}"
+    Type: AWS::StepFunctions::StateMachine
+    DependsOn:
+      - GlueJob
+      - GetCrawlerStatusFunction
+      - StartCrawlerFunction
+    Properties:
+      RoleArn: !GetAtt StepFunctionExecutionRole.Arn
+      DefinitionString: !Sub
+        - |-
+          {
+            "Comment": "A description of my state machine",
+            "StartAt": "Glue StartJobRun",
+            "States": {
+              "Glue StartJobRun": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::glue:startJobRun.sync",
+                "Parameters": {
+                  "JobName": "${GlueJobName}"
+                },
+                "Next": "crawler1start"
               },
-              "Next": "crawler1start"
-            },
-            "crawler1start": {
-              "Type": "Task",
-              "Resource": "arn:aws:states:::lambda:invoke",
-              "OutputPath": "$.Payload",
-              "Parameters": {
-                "FunctionName": "${StartCrawlerFunctionArn}",
-                "Payload": {
-                  "crawlername": "crawler1"
-                }
+              "crawler1start": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::lambda:invoke",
+                "OutputPath": "$.Payload",
+                "Parameters": {
+                  "FunctionName": "${StartCrawlerFunctionArn}",
+                  "Payload": {
+                    "crawlername": "crawler1"
+                  }
+                },
+                "Retry": [
+                  {
+                    "ErrorEquals": [
+                      "Lambda.ServiceException",
+                      "Lambda.AWSLambdaException",
+                      "Lambda.SdkClientException",
+                      "Lambda.TooManyRequestsException"
+                    ],
+                    "IntervalSeconds": 1,
+                    "MaxAttempts": 3,
+                    "BackoffRate": 2
+                  }
+                ],
+                "Next": "crawler1status"
               },
-              "Retry": [
-                {
-                  "ErrorEquals": [
-                    "Lambda.ServiceException",
-                    "Lambda.AWSLambdaException",
-                    "Lambda.SdkClientException",
-                    "Lambda.TooManyRequestsException"
-                  ],
-                  "IntervalSeconds": 1,
-                  "MaxAttempts": 3,
-                  "BackoffRate": 2
-                }
-              ],
-              "Next": "crawler1status"
-            },
-            "crawler1status": {
-              "Type": "Task",
-              "Resource": "arn:aws:states:::lambda:invoke",
-              "OutputPath": "$.Payload",
-              "Parameters": {
-                "FunctionName": "${GetCrawlerStatusFunctionArn}",
-                "Payload": {
-                  "crawlername": "crawler1"
-                }
-              },
-              "Retry": [
-                {
-                  "ErrorEquals": [
-                    "Lambda.ServiceException",
-                    "Lambda.AWSLambdaException",
-                    "Lambda.SdkClientException",
-                    "Lambda.TooManyRequestsException"
-                  ],
-                  "IntervalSeconds": 1,
-                  "MaxAttempts": 3,
-                  "BackoffRate": 2
-                }
-              ],
-              "Next": "CheckCrawlerStatus"
-            },
-            "CheckCrawlerStatus": {
-              "Type": "Choice",
-              "Choices": [
-                {
-                  "Variable": "$.state",
-                  "StringEquals": "RUNNING",
-                  "Next": "Wait"
-                }
-              ],
-              "Default": "Success"
-            },
-            "Wait": {
-              "Type": "Wait",
-              "Seconds": 30,
-              "Next": "crawler1status"
-            },
-            "Success": {
-              "Type": "Succeed"
+              "crawler1status": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::lambda:invoke",
+                "OutputPath": "$.Payload",
+                "Parameters": {
+                  "Payload": {
+                    "crawlername": "crawler1"
+                  }
+                  "FunctionName": "${GetCrawlerStatusFunctionArn}"
+                },
+                "Retry": [
+                  {
+                    "ErrorEquals": [
+                      "Lambda.ServiceException",
+                      "Lambda.AWSLambdaException",
+                      "Lambda.SdkClientException",
+                      "Lambda.TooManyRequestsException"
+                    ],
+                    "IntervalSeconds": 1,
+                    "MaxAttempts": 3,
+                    "BackoffRate": 2
+                  }
+                ],
+                "End": true
+              }
             }
           }
-        }
-      - GlueJobName: !Ref GlueJob
-        StartCrawlerFunctionArn: !GetAtt StartCrawlerFunction.Arn
-        GetCrawlerStatusFunctionArn: !GetAtt GetCrawlerStatusFunction.Arn
+        - GlueJobName: !Ref GlueJob
+          StartCrawlerFunctionArn: !GetAtt StartCrawlerFunction.Arn
+          GetCrawlerStatusFunctionArn: !GetAtt GetCrawlerStatusFunction.Arn
