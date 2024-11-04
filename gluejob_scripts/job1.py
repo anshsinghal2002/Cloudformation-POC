@@ -6,7 +6,7 @@ from awsglue.context import GlueContext
 from awsglue.job import Job
 
 # Include 'S3_BUCKET' in the list of arguments to be resolved
-args = getResolvedOptions(sys.argv, ['JOB_NAME', 'S3_BUCKET'])
+args = getResolvedOptions(sys.argv, ['JOB_NAME', 'S3_BUCKET_IN','S3_BUCKET_OUT'])
 
 sc = SparkContext()
 glueContext = GlueContext(sc)
@@ -15,8 +15,8 @@ job = Job(glueContext)
 job.init(args['JOB_NAME'], args)
 
 # Use the S3_BUCKET argument in the S3 paths
-input_path = f"s3://{args['S3_BUCKET']}/raw/games.csv"
-output_path = f"s3://{args['S3_BUCKET']}/cleaned/"
+input_path = f"s3://{args['S3_BUCKET_IN']}/raw/games.csv"
+output_path = f"s3://{args['S3_BUCKET_OUT']}/cleaned/"
 
 # Script generated for node Amazon S3
 AmazonS3_node1730081316654 = glueContext.create_dynamic_frame.from_options(

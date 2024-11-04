@@ -2,9 +2,13 @@ Resources:
   S3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: demo-bucket-123411
+      BucketName: demo-bucket-input
+  S3Bucket2:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: demo-bucket-output
 
-  UploadLambdaScripts:
+  UploadScripts:
     Type: Custom::S3Upload
     DependsOn: UploadLambda
     Properties:
@@ -15,6 +19,8 @@ Resources:
           Destination: scripts/lambda_start.zip
         - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/python_scripts/lambda_status.zip
           Destination: scripts/lambda_status.zip
+        - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/gluejob_scripts/job1.py
+          Destination: scripts/job1.py
 
   UploadData:
     Type: Custom::S3Upload
@@ -23,10 +29,17 @@ Resources:
       ServiceToken: !GetAtt UploadLambda.Arn
       BucketName: !Ref S3Bucket
       Files:
-        - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/gluejob_scripts/job1.py
-          Destination: scripts/job1.py
+        
         - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/example_data/games.csv
           Destination: raw/games.csv
+
+  OutputSetup:
+    Type: Custom::S3Upload
+    DependsOn: UploadLambda
+    Properties:
+      ServiceToken: !GetAtt UploadLambda.Arn
+      BucketName: !Ref S3Bucket
+      Files:
         - Source: https://raw.githubusercontent.com/anshsinghal2002/Cloudformation-POC/main/notes.md
           Destination: cleaned/notes.md
 
@@ -51,7 +64,9 @@ Resources:
                 Action:
                   - s3:PutObject
                   - s3:GetObject
-                Resource: !Sub ${S3Bucket.Arn}/*
+                Resource: 
+                  - !Sub ${S3Bucket.Arn}/*
+                  - !Sub ${S3Bucket2.Arn}/*
         - PolicyName: GlueAccess
           PolicyDocument:
             Version: '2012-10-17'
@@ -89,7 +104,7 @@ Resources:
 
   StartCrawlerFunction:
     Type: AWS::Lambda::Function
-    DependsOn: UploadLambdaScripts
+    DependsOn: UploadScripts
     Properties:
       FunctionName: start-crawler-function
       Handler: lambda_start.lambda_handler
@@ -102,7 +117,7 @@ Resources:
 
   GetCrawlerStatusFunction:
     Type: AWS::Lambda::Function
-    DependsOn: UploadLambdaScripts
+    DependsOn: UploadScripts
     Properties:
       FunctionName: get-crawler-status
       Handler: lambda_status.lambda_handler
@@ -136,7 +151,9 @@ Resources:
                   - s3:DeleteObject
                   - s3:ListBucket
                 Resource:
+                  - !Sub '${S3Bucket2.Arn}'
                   - !Sub '${S3Bucket.Arn}'
+                  - !Sub '${S3Bucket2.Arn}/*'
                   - !Sub '${S3Bucket.Arn}/*'
         - PolicyName: CrawlerPermissions
           PolicyDocument:
@@ -161,7 +178,10 @@ Resources:
 
   GlueJob:
     Type: AWS::Glue::Job
-    DependsOn: UploadData
+    DependsOn: 
+      - UploadData
+      - UploadScripts
+      - OutputSetup
     Properties:
       Name: my-glue-job
       Role: !GetAtt GlueJobRole.Arn
@@ -171,7 +191,8 @@ Resources:
       DefaultArguments:
         '--job-language': python
         '--job-bookmark-option': job-bookmark-enable
-        '--S3_BUCKET': !Ref S3Bucket
+        '--S3_BUCKET_IN': !Ref S3Bucket
+        '--S3_BUCKET_OUT': !Ref S3Bucket2
       GlueVersion: '3.0'
       MaxRetries: 0
       Timeout: 2880
@@ -197,7 +218,7 @@ Resources:
       DatabaseName: !Ref GlueDatabase
       Targets:
         S3Targets:
-          - Path: !Sub 's3://${S3Bucket}/cleaned/'
+          - Path: !Sub 's3://${S3Bucket2}/cleaned/'
       Schedule:
         ScheduleExpression: cron(0 1 * * ? *)
       SchemaChangePolicy:
